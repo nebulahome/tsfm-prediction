@@ -1,0 +1,6 @@
+.git
+.github
+target
+scripts
+*.md
+compose.yaml

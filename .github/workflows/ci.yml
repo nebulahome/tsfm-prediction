@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tsfm-prediction:ci .
+      - name: smoke test
+        run: |
+          docker run -d --name tsfm -p 8080:8080 tsfm-prediction:ci
+          for i in $(seq 1 20); do curl -fs localhost:8080/healthz && break; sleep 1; done
+          curl -fs localhost:8080/v1/status
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H 'content-type: application/json' -d '{"context":[],"horizon":1}' localhost:8080/v1/forecast)
+          test "$code" = 400
+          docker exec tsfm tsfm-prediction healthcheck
+          docker stop tsfm

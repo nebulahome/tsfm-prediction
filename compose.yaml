@@ -1,0 +1,17 @@
+# Example: the forecaster on an internal network, reached by other containers at http://tsfm:8080
+services:
+  tsfm:
+    image: tsfm-prediction:dev # build with: docker build -t tsfm-prediction:dev .
+    restart: unless-stopped
+    environment:
+      TSFM_MAX_QUALITY: medium # a weak machine can refuse the big models
+      TSFM_THREADS: "2"
+    volumes:
+      - tsfm-models:/models
+    networks:
+      default:
+        aliases: [tsfm]
+    # No published port: only containers on this network call it.
+
+volumes:
+  tsfm-models:
